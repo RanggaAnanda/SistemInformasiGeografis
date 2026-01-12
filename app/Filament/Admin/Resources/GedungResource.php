@@ -25,43 +25,46 @@ class GedungResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form
-    {
-        return $form->schema([
-            Section::make('Lokasi Gedung')
-                ->schema([
-                    Placeholder::make('map')
-                        ->content(fn($get) => view('filament.components.leaflet-map', [
-                            'latitude' => $get('latitude') ?? -6.9175,
-                            'longitude' => $get('longitude') ?? 107.6191,
-                        ])),
+{
+    return $form->schema([
+        Section::make('Lokasi Gedung')
+            ->schema([
+                Placeholder::make('map')
+                    ->content(fn($get) => view('filament.components.leaflet-map', [
+                        'latitude' => $get('latitude') ?? -6.9175,
+                        'longitude' => $get('longitude') ?? 107.6191,
+                    ])),
 
-                    TextInput::make('latitude')
-                        ->required()
-                        ->numeric()
-                        ->reactive(), // <- penting
+                TextInput::make('latitude')
+                    ->required()
+                    ->numeric()
+                    ->reactive(),
 
-                    TextInput::make('longitude')
-                        ->required()
-                        ->numeric()
-                        ->reactive(), // <- penting
-                ]),
+                TextInput::make('longitude')
+                    ->required()
+                    ->numeric()
+                    ->reactive(),
+            ]),
 
-            Section::make('Informasi Gedung')
-                ->schema([
-                    Forms\Components\Select::make('district_id')
-                        ->label('Kecamatan')
-                        ->relationship('district', 'nama_kecamatan')
-                        ->searchable()
-                        ->required()
-                        ->preload(),
+        Section::make('Informasi Gedung')
+            ->schema([
+                Forms\Components\Select::make('district_id')
+                    ->label('Kecamatan')
+                    ->relationship('district', 'nama_kecamatan')
+                    ->searchable()
+                    ->required()
+                    ->preload(),
 
-                    TextInput::make('nama_gedung')->required(),
-                    TextInput::make('jenis')->required(),
+                TextInput::make('nama_gedung')->required(),
+                TextInput::make('jenis')->required(),
 
-                    Forms\Components\Textarea::make('alamat')->columnSpanFull()->rows(3),
-                ])->columns(2),
-        ]);
-    }
+                Forms\Components\Textarea::make('alamat')
+                    ->columnSpanFull()
+                    ->rows(3)
+                    ->reactive(), // penting supaya Livewire bisa update
+            ])->columns(2),
+    ]);
+}
 
     public static function table(Table $table): Table
     {
