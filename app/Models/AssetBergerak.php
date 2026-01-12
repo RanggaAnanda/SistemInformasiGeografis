@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AssetBergerak extends Model
 {
-    protected $table = 'asset_bergerak' ;
+    protected $table = 'asset_bergerak';
 
     protected $fillable = [
         'kode_aset',
@@ -15,22 +15,28 @@ class AssetBergerak extends Model
         'gedung_id',
         'status',
         'kategori_asset_id',
-        'value'
+        'value',
+        'pegawai_id',
     ];
 
-    protected $casts = ['value'=>'array'];
+    protected $casts = ['value' => 'array'];
 
     public function gedung()
     {
         return $this->belongsTo(Gedung::class);
     }
-
-    public function mutations()
+    
+    public function mutasi()
     {
         return $this->hasMany(MutasiAsset::class);
     }
 
-    public function kategori(){
-        return $this->belongsTo(KategoriAsset::class,'kategori_asset_id');
+    public function kategori()
+    {
+        return $this->belongsTo(KategoriAsset::class, 'kategori_asset_id');
+    }
+    public function pegawai()
+    {
+        return $this->belongsTo(Pegawai::class);
     }
 }

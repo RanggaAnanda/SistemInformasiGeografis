@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class KategoriAssetResource extends Resource
 {
     protected static ?string $model = KategoriAsset::class;
+    protected static ?string $navigationLabel = 'Kategori Asset';
+    protected static ?string $navigationGroup = 'Data Aset';
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('asset_bergerak', function (Blueprint $table) {
+        Schema::create('operating_hours', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_aset')->unique();
-            $table->string('nama_aset');
-            $table->string('jenis');
             $table->foreignId('gedung_id')->constrained('gedung')->cascadeOnDelete();
-            $table->foreignId('kategori_asset_id')->constrained('kategori_asset')->cascadeOnDelete();
-            $table->enum('status', ['tersedia', 'digunakan', 'rusak', 'hilang'])->default('tersedia');
-            $table->json('value')->nullable();
+            $table->tinyInteger('day_of_week'); // 0=Min, 6=Sab
+            $table->time('open_time')->nullable();
+            $table->time('close_time')->nullable();
+            $table->boolean('is_closed')->default(false);
             $table->timestamps();
         });
     }
@@ -29,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('asset_bergerak');
+        Schema::dropIfExists('operating_hours');
     }
 };

@@ -23,6 +23,9 @@ use Filament\Tables\Actions\BulkActionGroup;
 use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Filters\SelectFilter;
 
+use App\Models\Pegawai;
+
+
 class AssetBergerakResource extends Resource
 {
     protected static ?string $model = AssetBergerak::class;
@@ -48,17 +51,39 @@ class AssetBergerakResource extends Resource
                                 'barang elektronik' => 'Barang elektronik',
                             ])
                             ->required(),
+
                         Select::make('gedung_id')
+                            ->label('Gedung')
                             ->relationship('gedung', 'nama_gedung')
                             ->required()
-                            ->searchable(),
+                            ->live()
+                            ->searchable()
+                            ->afterStateUpdated(fn($state, callable $set) => $set('pegawai_id', null)),
+
+                        Select::make('pegawai_id')
+                            ->label('Penanggung Jawab (Pegawai)')
+                            ->options(function (Get $get) {
+                                if (!$get('gedung_id')) {
+                                    return [];
+                                }
+
+                                return Pegawai::where('gedung_id', $get('gedung_id'))
+                                    ->where('status', 'aktif')
+                                    ->pluck('nama', 'id');
+                            })
+                            ->searchable()
+                            ->placeholder('Aset berada di gedung')
+                            ->helperText('Kosongkan jika aset berada di gedung')
+                            ->disabled(fn(Get $get) => !$get('gedung_id')),
+
                         Select::make('status')
                             ->options([
-                                'aktif' => 'Aktif',
-                                'dipindahkan' => 'Dipindahkan',
-                                'rusak' => 'Rusak',
+                                'tersedia' => 'Tersedia (di Gedung)',
+                                'digunakan' => 'Digunakan Pegawai',
+                                'rusak'     => 'Rusak',
+                                'hilang'    => 'Hilang',
                             ])
-                            ->default('aktif')
+                            ->default('tersedia')
                             ->required(),
                     ])->columns(2),
 
@@ -152,14 +177,14 @@ class AssetBergerakResource extends Resource
                 // Perbaikan filter agar sesuai relasi 'kategori'
                 Tables\Filters\SelectFilter::make('kategori_asset_id')
                     ->label('Filter Kategori')
-                    ->relationship('kategori', 'nama_kategori')  ,  
+                    ->relationship('kategori', 'nama_kategori'),
                 Tables\Filters\SelectFilter::make('jenis')
                     ->label('Jenis')
                     ->options([
-                                'kendaraan' => 'Kendaraan',
-                                'furnitur' => 'Furnitur',
-                                'barang elektronik' => 'Barang elektronik',
-                            ])
+                        'kendaraan' => 'Kendaraan',
+                        'furnitur' => 'Furnitur',
+                        'barang elektronik' => 'Barang elektronik',
+                    ])
             ])
             ->actions([
                 EditAction::make(),
