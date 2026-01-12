@@ -16,4 +16,13 @@ class EditGedung extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+    protected $listeners = ['updateLocation'];
+
+    public function updateLocation($lat, $lng)
+    {
+        $this->form->fill([
+            'latitude' => $lat,
+            'longitude' => $lng,
+        ]);
+    }
 }

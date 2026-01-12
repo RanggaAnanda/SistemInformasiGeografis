@@ -9,4 +9,13 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateGedung extends CreateRecord
 {
     protected static string $resource = GedungResource::class;
+    protected $listeners = ['updateLocation'];
+
+    public function updateLocation($lat, $lng)
+    {
+        $this->form->fill([
+            'latitude' => $lat,
+            'longitude' => $lng,
+        ]);
+    }
 }
