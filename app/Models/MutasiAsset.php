@@ -39,4 +39,23 @@ class MutasiAsset extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+    public function fromGedung()
+    {
+        return $this->belongsTo(Gedung::class, 'from_gedung_id');
+    }
+
+    public function toGedung()
+    {
+        return $this->belongsTo(Gedung::class, 'to_gedung_id');
+    }
+
+    public function fromPegawai()
+    {
+        return $this->belongsTo(Pegawai::class, 'from_pegawai_id');
+    }
+
+    public function toPegawai()
+    {
+        return $this->belongsTo(Pegawai::class, 'to_pegawai_id');
+    }
 }

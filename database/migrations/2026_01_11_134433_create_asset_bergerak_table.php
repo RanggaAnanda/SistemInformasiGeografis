@@ -15,10 +15,20 @@ return new class extends Migration
             $table->id();
             $table->string('kode_aset')->unique();
             $table->string('nama_aset');
-            $table->string('jenis');
-            $table->foreignId('gedung_id')->constrained('gedung')->cascadeOnDelete();
-            $table->foreignId('kategori_asset_id')->constrained('kategori_asset')->cascadeOnDelete();
-            $table->enum('status', ['tersedia', 'digunakan', 'rusak', 'hilang'])->default('tersedia');
+
+            $table->foreignId('jenis_asset_id')
+                ->constrained('jenis_asset');
+
+            $table->foreignId('kategori_asset_id')
+                ->constrained('kategori_asset');
+
+            $table->foreignId('gedung_id')
+                ->constrained('gedung')
+                ->cascadeOnDelete();
+                
+            $table->enum('status', ['tersedia', 'digunakan', 'rusak'])
+                ->default('tersedia');
+
             $table->json('value')->nullable();
             $table->timestamps();
         });

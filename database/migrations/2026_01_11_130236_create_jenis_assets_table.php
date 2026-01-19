@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('kategori_asset', function (Blueprint $table) {
+        Schema::create('jenis_asset', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('jenis_asset_id')
-                ->constrained('jenis_asset')
-                ->cascadeOnDelete();
-
-            $table->string('nama_kategori');
-            $table->json('fields')->nullable();
+            $table->string('kode')->unique();   // KDR, FNT, ELE
+            $table->string('nama_jenis');       // Kendaraan, Furnitur, Elektronik
+            $table->text('keterangan')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('kategori_asset');
+        Schema::dropIfExists('jenis_assets');
     }
 };

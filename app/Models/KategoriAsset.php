@@ -11,11 +11,17 @@ class KategoriAsset extends Model
 
     protected $fillable = [
         'nama_kategori',
+        'jenis_asset_id',
         'fields'
     ];
     protected $casts = [
         'fields' => 'array', 
     ];
+
+    public function jenis()
+    {
+        return $this->belongsTo(JenisAsset::class, 'jenis_asset_id');
+    }
 
     public function assets(): HasMany
     {

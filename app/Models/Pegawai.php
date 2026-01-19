@@ -29,6 +29,10 @@ class Pegawai extends Model
     {
         return $this->hasMany(AssetBergerak::class);
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * (Nanti) Pegawai bisa bertanggung jawab atas banyak aset

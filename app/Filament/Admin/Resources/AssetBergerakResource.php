@@ -44,13 +44,14 @@ class AssetBergerakResource extends Resource
                             ->readonly()
                             ->unique(ignoreRecord: true)
                             ->helperText('Otomatis dibuat berdasarkan kategori yang dipilih'),
-                        Select::make('jenis')
-                            ->options([
-                                'kendaraan' => 'Kendaraan',
-                                'furnitur' => 'Furnitur',
-                                'barang elektronik' => 'Barang elektronik',
-                            ])
-                            ->required(),
+
+                        Select::make('jenis_asset_id')
+                            ->label('Jenis Asset')
+                            ->relationship('jenis', 'nama_jenis')
+                            ->required()
+                            ->live()
+                            ->afterStateUpdated(fn($set) => $set('kategori_asset_id', null)),
+
 
                         Select::make('gedung_id')
                             ->label('Gedung')
@@ -58,6 +59,7 @@ class AssetBergerakResource extends Resource
                             ->required()
                             ->live()
                             ->searchable()
+                            ->preload()
                             ->afterStateUpdated(fn($state, callable $set) => $set('pegawai_id', null)),
 
                         Select::make('pegawai_id')
@@ -89,8 +91,17 @@ class AssetBergerakResource extends Resource
 
                 Section::make('Atribut Berdasarkan Kategori')
                     ->schema([
+                        TextInput::make('nama_aset'),
                         Select::make('kategori_asset_id')
                             ->label('Kategori Aset')
+                            ->options(function (Get $get) {
+                                $jenisId = $get('jenis_asset_id');
+                                if (!$jenisId) {
+                                    return [];
+                                }
+                                return KategoriAsset::where('jenis_asset_id', $jenisId)
+                                    ->pluck('nama_kategori', 'id');
+                            })
                             ->relationship('kategori', 'nama_kategori')
                             ->live()
                             ->required()
@@ -106,7 +117,8 @@ class AssetBergerakResource extends Resource
 
                                 // 2. Ambil inisial dari nama kategori (contoh: Motor -> MTR)
                                 // Kita ambil 3 huruf pertama dan jadikan uppercase
-                                $prefix = strtoupper(substr($category->nama_kategori, 0, 3));
+                                $jenis = $category->jenis;
+                                $prefix = strtoupper($jenis->kode);
 
                                 // 3. Hitung jumlah aset yang sudah menggunakan kategori ini
                                 $count = \App\Models\AssetBergerak::where('kategori_asset_id', $state)->count();

@@ -53,6 +53,8 @@ return new class extends Migration
                 'antar_gedung',
             ]);
 
+            $table->text('catatan')->nullable();
+
             // Approval
             $table->foreignId('requested_by')
                 ->constrained('users')

@@ -20,11 +20,11 @@ class AssetBergerakSeeder extends Seeder
 
         AssetBergerak::create([
             'kode_aset' => 'KEN-001',
-            'nama_aset'=>'s',
-            'jenis' => 'kendaraan',
-            'kategori_asset_id' => $kendaraan->id,
+            'nama_aset'=>'Motor Vario',
+            'jenis_asset_id' => 1,
+            'kategori_asset_id' => 1,
             'gedung_id' => $gedung->id,
-            'pegawai_id' => null,
+            'pegawai_id' => NULL,
             'status' => 'tersedia',
             'value' => [
                 'merk' => 'Honda',
@@ -35,9 +35,9 @@ class AssetBergerakSeeder extends Seeder
 
         AssetBergerak::create([
             'kode_aset' => 'LAP-001',
-            'nama_aset'=>'s',
-            'jenis' => 'barang elektronik',
-            'kategori_asset_id' => $laptop->id,
+            'nama_aset'=>'Laptop Lenovo',
+            'jenis_asset_id' => 2,
+            'kategori_asset_id' => 2,
             'gedung_id' => $gedung->id,
             'pegawai_id' => $pegawai->id,
             'status' => 'digunakan',

@@ -2,19 +2,19 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\MutasiAssetResource\Pages;
+use Filament\Forms;
+use Filament\Tables;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
 use App\Models\MutasiAsset;
 use App\Models\AssetBergerak;
-use App\Services\MutasiAssetService;
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Actions\Action;
+use App\Services\MutasiAssetService;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Select;
+use App\Filament\Admin\Resources\MutasiAssetResource\Pages;
 
 class MutasiAssetResource extends Resource
 {
@@ -27,26 +27,85 @@ class MutasiAssetResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            Forms\Components\Select::make('asset_bergerak_id')
+            Select::make('asset_bergerak_id')
                 ->label('Asset')
-                ->relationship('asset', 'kode_aset')
-                ->required(),
+                ->relationship(
+                    'asset',
+                    'kode_aset',
+                    function ($query) {
+                        $user = Auth::user();
 
-            Forms\Components\Select::make('jenis_mutasi')
-                ->options([
-                    'klaim' => 'Klaim Asset',
-                    'pengembalian' => 'Pengembalian',
-                    'internal' => 'Mutasi Internal',
-                    'antar_gedung' => 'Mutasi Antar Gedung',
-                ])
-                ->required(),
+                        // Super admin: lihat semua asset
+                        if ($user->role === 'super_admin') {
+                            return $query;
+                        }
 
-            Forms\Components\Textarea::make('keterangan')
-                ->label('Alasan / Keterangan')
-                ->required(),
+                        // Pegawai wajib punya gedung
+                        if (! $user->pegawai) {
+                            return $query->whereRaw('1 = 0');
+                        }
+
+                        // Pegawai hanya asset di gedung sendiri
+                        return $query->where('gedung_id', $user->pegawai->gedung_id);
+                    }
+                )
+                ->required()
+                ->searchable()
+                ->preload()
+                ->live(),
+
+
+
+            Select::make('jenis_mutasi')
+                ->required()
+                ->options(function (Get $get) {
+
+                    $assetId = $get('asset_bergerak_id');
+                    if (! $assetId) {
+                        return [];
+                    }
+
+                    $asset = AssetBergerak::find($assetId);
+                    if (! $asset) {
+                        return [];
+                    }
+
+                    return match ($asset->status) {
+                        'tersedia' => [
+                            'klaim' => 'Klaim Asset',
+                            'antar_gedung' => 'Pindah Gedung',
+                        ],
+                        'digunakan' => [
+                            'pengembalian' => 'Pengembalian',
+                        ],
+                        default => [],
+                    };
+                })
+                ->live(),
+
+            Select::make('to_pegawai_id')
+                ->label('Digunakan Oleh')
+                ->relationship('toPegawai', 'nama')
+                ->visible(fn(Get $get) => $get('jenis_mutasi') === 'klaim')
+                ->disabled(fn() => Auth::user()->role === 'pegawai')
+                ->default(
+                    fn() =>
+                    Auth::user()->role === 'pegawai'
+                        ? Auth::user()->pegawai->id
+                        : null
+                ),
+
+
+            Select::make('to_gedung_id')
+                ->relationship('toGedung', 'nama_gedung')
+                ->visible(fn(Get $get) => $get('jenis_mutasi') === 'antar_gedung')
+                ->required(fn(Get $get) => $get('jenis_mutasi') === 'antar_gedung'),
+
+
+            Forms\Components\Textarea::make('keterangan')->required(),
 
             Forms\Components\Hidden::make('requested_by')
-                ->default(fn () => Auth::id()),
+                ->default(fn() => Auth::id()),
         ]);
     }
 
@@ -54,60 +113,49 @@ class MutasiAssetResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('asset.kode_aset')
-                    ->label('Asset')
-                    ->sortable()
-                    ->searchable(),
-
-                TextColumn::make('jenis_mutasi')
-                    ->badge(),
-
-                BadgeColumn::make('status')
-                    ->colors([
-                        'warning' => 'draft',
-                        'success' => 'approved',
-                        'danger'  => 'rejected',
-                    ]),
-
-                TextColumn::make('requestedBy.name')
-                    ->label('Diajukan Oleh'),
-
-                TextColumn::make('approvedBy.name')
-                    ->label('Disetujui Oleh')
-                    ->toggleable(),
-
-                TextColumn::make('approved_at')
-                    ->label('Tanggal Approval')
-                    ->dateTime()
-                    ->toggleable(),
+                Tables\Columns\TextColumn::make('asset.kode_aset')->searchable(),
+                Tables\Columns\TextColumn::make('jenis_mutasi')->badge(),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'draft' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    }),
+                Tables\Columns\TextColumn::make('requestedBy.name')->label('Pemohon'),
+                Tables\Columns\TextColumn::make('approvedBy.name')->label('Approver')->toggleable(),
+                Tables\Columns\TextColumn::make('approved_at')->dateTime()->toggleable(),
             ])
             ->actions([
                 Action::make('approve')
-                    ->label('Approve')
+                    ->visible(
+                        fn(MutasiAsset $record) =>
+                        Auth::check() && Auth::user()->can('approve', $record)
+                    )
                     ->color('success')
-                    ->icon('heroicon-o-check')
-                    ->visible(fn (MutasiAsset $record) => $record->status === 'draft')
-                    ->action(function (MutasiAsset $record) {
+                    ->requiresConfirmation()
+                    ->action(
+                        fn(MutasiAsset $record) =>
                         app(MutasiAssetService::class)
-                            ->approve($record, Auth::id());
-                    })
-                    ->requiresConfirmation(),
+                            ->approve($record, Auth::id())
+                    ),
 
                 Action::make('reject')
-                    ->label('Reject')
+                    ->visible(
+                        fn(MutasiAsset $record) =>
+                        Auth::check() && Auth::user()->can('approve', $record)
+                    )
                     ->color('danger')
-                    ->icon('heroicon-o-x-mark')
-                    ->visible(fn (MutasiAsset $record) => $record->status === 'draft')
                     ->form([
-                        Forms\Components\Textarea::make('keterangan')
-                            ->label('Alasan Penolakan')
-                            ->required(),
+                        Forms\Components\Textarea::make('keterangan')->required(),
                     ])
-                    ->action(function (MutasiAsset $record, array $data) {
+                    ->requiresConfirmation()
+                    ->action(
+                        fn(MutasiAsset $record, array $data) =>
                         app(MutasiAssetService::class)
-                            ->reject($record, Auth::id(), $data['keterangan']);
-                    })
-                    ->requiresConfirmation(),
+                            ->reject($record, Auth::id(), $data['keterangan'])
+                    ),
             ]);
     }
 

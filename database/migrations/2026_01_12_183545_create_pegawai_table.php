@@ -14,6 +14,11 @@ return new class extends Migration
         Schema::create('pegawai', function (Blueprint $table) {
             $table->id();
 
+            $table->foreignId('user_id')
+                ->unique()
+                ->constrained('users')
+                ->cascadeOnDelete();
+
             // Relasi ke Gedung (home base pegawai)
             $table->foreignId('gedung_id')
                 ->constrained('gedung')
