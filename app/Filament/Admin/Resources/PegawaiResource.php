@@ -57,6 +57,16 @@ class PegawaiResource extends Resource
                         ->default('aktif')
                         ->required(),
 
+                    Select::make('role')
+                        ->label('Role User')
+                        ->options([
+                            'pegawai'     => 'Pegawai',
+                            'admin_asset' => 'Admin Asset',
+                        ])
+                        ->required()
+                        ->default('pegawai')
+                        ->helperText('Menentukan hak akses user login'),
+
                     Textarea::make('keterangan')
                         ->rows(3)
                         ->columnSpanFull(),
